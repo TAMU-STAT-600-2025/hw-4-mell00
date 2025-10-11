@@ -84,6 +84,9 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
   if (!is.numeric(Xtilde) || !is.numeric(Ytilde))
     stop("Xtilde and Ytilde must be numeric")
+  n <- nrow(Xtilde); p <- ncol(Xtilde)
+  if (length(Ytilde) != n) stop("length of Ytilde must match number of rows in Xtilde")
+  if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values are not supported")
   #[ToDo]  Check that lambda is non-negative
   
   #[ToDo]  Check for starting point beta_start. 
