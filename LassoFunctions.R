@@ -12,10 +12,13 @@ standardizeXY <- function(X, Y){
   if (n < 1 || p < 1) stop("X must have positive dimensions")
   if (anyNA(X) || anyNA(Y)) stop("missing inputs not supported")
   
-  # [ToDo] Center Y
+  # Center Y
+  Ymean <- mean(Y)
+  Ytilde <- as.numeric(Y - Ymean)
   
-  # [ToDo] Center and scale X
-  
+  # Center and scale X
+  Xmeans <- colMeans(X)
+  Xc <- sweep(X, 2, Xmeans, FUN = "-")
   
   # Return:
   # Xtilde - centered and appropriately scaled X
