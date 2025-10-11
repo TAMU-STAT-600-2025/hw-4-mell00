@@ -1,4 +1,4 @@
-# [ToDo] Standardize X and Y: center both X and Y; scale centered X
+# Standardize X and Y: center both X and Y; scale centered X
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
 standardizeXY <- function(X, Y){
@@ -73,7 +73,7 @@ lasso <- function(Xtilde, Ytilde, beta, lambda){
   (sum(resid * resid) / (2 * n)) + lambda * sum(abs(beta))
 }
 
-# [ToDo] Fit LASSO on standardized data for a given lambda
+# Fit LASSO on standardized data for a given lambda
 # Xtilde - centered and scaled X, n x p
 # Ytilde - centered Y, n x 1 (vector)
 # lamdba - tuning parameter
@@ -112,7 +112,7 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   r <- as.numeric(Ytilde - Xtilde %*% beta)
   f_prev <- (sum(r * r) / (2 * n)) + lambda * sum(abs(beta))
   
-  #[ToDo]  Coordinate-descent implementation. 
+  # Coordinate-descent implementation. 
   # Stop when the difference between objective functions is less than eps for the first time.
   # For example, if you have 3 iterations with objectives 3, 1, 0.99999,
   # your should return fmin = 0.99999, and not have another iteration
