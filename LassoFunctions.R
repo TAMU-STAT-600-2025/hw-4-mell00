@@ -20,6 +20,20 @@ standardizeXY <- function(X, Y){
   Xmeans <- colMeans(X)
   Xc <- sweep(X, 2, Xmeans, FUN = "-")
   
+  # weights defined as sqrt(X_j^{\top}X_j/n) after centering of X but before scaling
+  n_inv <- 1 / n
+  weights <- sqrt(colSums(Xc * Xc) * n_inv)
+  
+  # check for columns with zero variance
+  zero_var <- which(weights == 0)
+  if (length(zero_var) > 0L) {
+    
+    # for constant columns, keep 0 after centering; set weight to 1 to avoid division by 0
+    weights[zero_var] <- 1
+    Xc[, zero_var] <- 0
+  }
+  
+  
   # Return:
   # Xtilde - centered and appropriately scaled X
   # Ytilde - centered Y
