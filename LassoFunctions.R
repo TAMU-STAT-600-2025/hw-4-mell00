@@ -2,6 +2,16 @@
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
 standardizeXY <- function(X, Y){
+  
+  # Basic checks
+  if (is.null(dim(X))) stop("X must be a 2D matrix")
+  if (!is.numeric(X)) stop("X must be numeric")
+  if (!is.numeric(Y)) stop("Y must be numeric")
+  n <- nrow(X); p <- ncol(X)
+  if (length(Y) != n) stop("length of Y must match number of rows in X")
+  if (n < 1 || p < 1) stop("X must have positive dimensions")
+  if (anyNA(X) || anyNA(Y)) stop("missing inputs not supported")
+  
   # [ToDo] Center Y
   
   # [ToDo] Center and scale X
