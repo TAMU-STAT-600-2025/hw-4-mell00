@@ -45,10 +45,13 @@ standardizeXY <- function(X, Y){
   return(list(Xtilde = Xtilde, Ytilde = Ytilde, Ymean = Ymean, Xmeans = Xmeans, weights = weights))
 }
 
-# [ToDo] Soft-thresholding of a scalar a at level lambda 
+# Soft-thresholding of a scalar a at level lambda 
 # [OK to have vector version as long as works correctly on scalar; will only test on scalars]
 soft <- function(a, lambda){
-
+  if (!is.numeric(a) || !is.numeric(lambda) || length(lambda) != 1L)
+    stop("inputs must be numeric & lambda must be length 1")
+  if (lambda < 0) stop("lambda must be non-negative")
+  sign(a) * pmax(abs(a) - lambda, 0)
 }
 
 # [ToDo] Calculate objective function of lasso given current values of Xtilde, Ytilde, beta and lambda
