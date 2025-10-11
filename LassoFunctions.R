@@ -54,13 +54,23 @@ soft <- function(a, lambda){
   sign(a) * pmax(abs(a) - lambda, 0)
 }
 
-# [ToDo] Calculate objective function of lasso given current values of Xtilde, Ytilde, beta and lambda
+# Calculate objective function of lasso given current values of Xtilde, Ytilde, beta and lambda
 # Xtilde - centered and scaled X, n x p
 # Ytilde - centered Y, n x 1
 # lamdba - tuning parameter
 # beta - value of beta at which to evaluate the function
 lasso <- function(Xtilde, Ytilde, beta, lambda){
- 
+  if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
+  if (!is.numeric(Xtilde) || !is.numeric(Ytilde) || !is.numeric(beta))
+    stop("all inputs must be numeric")
+  n <- nrow(Xtilde); p <- ncol(Xtilde)
+  if (length(Ytilde) != n) stop("length of Ytilde must = number of rows in Xtilde")
+  if (length(beta) != p) stop("length of beta must = number of columns in Xtilde")
+  if (!is.numeric(lambda) || length(lambda) != 1L || lambda < 0)
+    stop("lambda must be a non-negative numeric scalar")
+  
+  resid <- as.numeric(Ytilde - Xtilde %*% beta)
+  (sum(resid * resid) / (2 * n)) + lambda * sum(abs(beta))
 }
 
 # [ToDo] Fit LASSO on standardized data for a given lambda
