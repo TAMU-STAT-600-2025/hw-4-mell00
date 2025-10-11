@@ -88,7 +88,10 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   if (length(Ytilde) != n) stop("length of Ytilde must match number of rows in Xtilde")
   if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values are not supported")
   
-  #[ToDo]  Check that lambda is non-negative
+  # Check that lambda is non-negative
+  
+  if (!is.numeric(lambda) || length(lambda) != 1L || lambda < 0)
+    stop("lambda must be a non-negative numeric scalar.")
   
   # Check for starting point beta_start. 
   # If none supplied, initialize with a vector of zeros.
