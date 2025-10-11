@@ -117,6 +117,36 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   # For example, if you have 3 iterations with objectives 3, 1, 0.99999,
   # your should return fmin = 0.99999, and not have another iteration
   
+  repeat {
+    for (j in seq_len(p)) {
+      if (z[j] == 0) { next }  # skip if column is all 0s
+      bj_old <- beta[j]
+      
+      # re-add old contribution
+      r <- r + Xtilde[, j] * bj_old
+      
+      # partial residual correlation
+      rho <- sum(Xtilde[, j] * r) / n
+      
+      # soft-threshold update
+      bj_new <- soft(rho, lambda) / z[j]
+      beta[j] <- bj_new
+      
+      # remove new contribution
+      r <- r - Xtilde[, j] * bj_new
+    }
+    
+    # compute current objective
+    f_curr <- (sum(r * r) / (2 * n)) + lambda * sum(abs(beta))
+    
+    # convergence check: stop at the first time the difference < eps
+    if (abs(f_prev - f_curr) < eps) {
+      fmin <- f_curr
+      break
+    }
+    f_prev <- f_curr
+  }
+  
   # Return 
   # beta - the solution (a vector)
   # fmin - optimal function value (value of objective at beta, scalar)
