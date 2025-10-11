@@ -80,8 +80,10 @@ lasso <- function(Xtilde, Ytilde, beta, lambda){
 # beta_start - p vector, an optional starting point for coordinate-descent algorithm
 # eps - precision level for convergence assessment, default 0.001
 fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps = 0.001){
-  #[ToDo]  Check that n is the same between Xtilde and Ytilde
-  
+  #Check that n is the same between Xtilde and Ytilde
+  if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
+  if (!is.numeric(Xtilde) || !is.numeric(Ytilde))
+    stop("Xtilde and Ytilde must be numeric")
   #[ToDo]  Check that lambda is non-negative
   
   #[ToDo]  Check for starting point beta_start. 
