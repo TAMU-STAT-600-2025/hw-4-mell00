@@ -89,9 +89,17 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values are not supported")
   #[ToDo]  Check that lambda is non-negative
   
-  #[ToDo]  Check for starting point beta_start. 
+  # Check for starting point beta_start. 
   # If none supplied, initialize with a vector of zeros.
   # If supplied, check for compatibility with Xtilde in terms of p
+  
+  if (is.null(beta_start)) {
+    beta <- numeric(p)
+  } else {
+    if (!is.numeric(beta_start) || length(beta_start) != p)
+      stop("beta_start must be a numeric vector of length ncol(Xtilde)")
+    beta <- as.numeric(beta_start)
+  }
   
   #[ToDo]  Coordinate-descent implementation. 
   # Stop when the difference between objective functions is less than eps for the first time.
