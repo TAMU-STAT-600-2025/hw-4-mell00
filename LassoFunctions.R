@@ -87,6 +87,7 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   n <- nrow(Xtilde); p <- ncol(Xtilde)
   if (length(Ytilde) != n) stop("length of Ytilde must match number of rows in Xtilde")
   if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values are not supported")
+  
   #[ToDo]  Check that lambda is non-negative
   
   # Check for starting point beta_start. 
@@ -100,6 +101,9 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
       stop("beta_start must be a numeric vector of length ncol(Xtilde)")
     beta <- as.numeric(beta_start)
   }
+  
+  # Pre-compute column norms z_j = (1/n) * sum x_{ij}^2
+  z <- colSums(Xtilde * Xtilde) / n
   
   #[ToDo]  Coordinate-descent implementation. 
   # Stop when the difference between objective functions is less than eps for the first time.
