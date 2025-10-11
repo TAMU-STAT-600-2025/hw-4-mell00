@@ -105,6 +105,10 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   # Pre-compute column norms z_j = (1/n) * sum x_{ij}^2
   z <- colSums(Xtilde * Xtilde) / n
   
+  # Initialize residual and objective
+  r <- as.numeric(Ytilde - Xtilde %*% beta)
+  f_prev <- (sum(r * r) / (2 * n)) + lambda * sum(abs(beta))
+  
   #[ToDo]  Coordinate-descent implementation. 
   # Stop when the difference between objective functions is less than eps for the first time.
   # For example, if you have 3 iterations with objectives 3, 1, 0.99999,
