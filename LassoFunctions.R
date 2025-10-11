@@ -33,6 +33,8 @@ standardizeXY <- function(X, Y){
     Xc[, zero_var] <- 0
   }
   
+  # scale to ensure each column has n^{-1} X_j^T X_j = 1 after scaling
+  Xtilde <- sweep(Xc, 2, weights, FUN = "/")
   
   # Return:
   # Xtilde - centered and appropriately scaled X
