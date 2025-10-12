@@ -18,7 +18,13 @@ source("LassoFunctions.R")
 
 # Use your fitLASSO function on the riboflavin data with 60 tuning parameters
 fit60 <- fitLASSO(X, Y, n_lambda = 60)
-# [ToDo] Based on the above output, plot the number of non-zero elements in each beta versus the value of tuning parameter
+
+# Based on the above output, plot the number of non-zero elements in each beta versus the value of tuning parameter
+nnz <- colSums(abs(fit60$beta_mat) > 1e-8)  # treat very small values as 0
+plot(fit60$lambda_seq, nnz, type = "b", log = "x",
+     xlab = expression(lambda),
+     ylab = "# non-zero coefficients",
+     main = "Sparsity vs Tuning Parameter (LASSO)")
 
 # [ToDo] Use microbenchmark 10 times to check the timing of your fitLASSO function above with 60 tuning parameters
 
