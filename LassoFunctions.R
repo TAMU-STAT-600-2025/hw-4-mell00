@@ -275,6 +275,12 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   seq_fit <- fitLASSOstandardized_seq(Xtilde, Ytilde, lambda_seq = lambda_seq,
                                       n_lambda = n_lambda, eps = eps)
   
+  # check—λ sequence length must match solution columns
+  if (length(seq_fit$lambda_seq) != ncol(seq_fit$beta_mat)) {
+    stop(sprintf("internal error: length(lambda_seq)=%d != ncol(beta_mat)=%d",
+                 length(seq_fit$lambda_seq), ncol(seq_fit$beta_mat)))
+  }
+  
   # Perform back scaling and centering to get original intercept and coefficient vector
   # for each lambda
   
@@ -288,11 +294,14 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   # intercept: beta0 = Ymean - sum_j Xmean_j * beta_j
   beta0_vec <- as.numeric(std$Ymean - crossprod(std$Xmeans, beta_mat))
   
+  # isolate output lambda sequence
+  lambda_seq_out <- seq_fit$lambda_seq
+  
   # Return output
   # lambda_seq - the actual sequence of tuning parameters used
   # beta_mat - p x length(lambda_seq) matrix of corresponding solutions at each lambda value (original data without center or scale)
   # beta0_vec - length(lambda_seq) vector of intercepts (original data without center or scale)
-  return(list(lambda_seq = lambda_seq, beta_mat = beta_mat, beta0_vec = beta0_vec))
+  return(list(lambda_seq = lambda_seq_out, beta_mat = beta_mat, beta0_vec = beta0_vec))
 }
 
 
