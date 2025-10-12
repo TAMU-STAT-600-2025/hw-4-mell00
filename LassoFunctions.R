@@ -328,8 +328,46 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
   lambda_seq_used <- full_fit$lambda_seq
   m <- length(lambda_seq_used)
  
-  # [ToDo] If fold_ids is NULL, split the data randomly into k folds.
+  # If fold_ids is NULL, split the data randomly into k folds.
   # If fold_ids is not NULL, split the data according to supplied fold_ids.
+  
+  if (is.null(fold_ids)) {
+    if (!is.numeric(k) || length(k) != 1L || k < 2 || k != as.integer(k))
+      stop("k must be an integer >= 2.")
+    if (k > n) stop("k cannot exceed n.")
+    
+    # Balanced random assignment of folds (sizes differ by at most 1)
+    perm <- sample.int(n)
+    fold_ids <- integer(n)
+    base_size <- n %/% k
+    extras <- n %% k
+    start <- 1L
+    for (f in seq_len(k)) {
+      take <- base_size + as.integer(f <= extras)
+      if (take > 0L) {
+        idx <- perm[start:(start + take - 1L)]
+        fold_ids[idx] <- f
+        start <- start + take
+      }
+    }
+  } else {
+    
+    # Validate supplied fold_ids
+    if (is.factor(fold_ids)) fold_ids <- as.integer(fold_ids)
+    if (!is.numeric(fold_ids) || length(fold_ids) != n)
+      stop("fold_ids must be a numeric vector of length n")
+    if (any(is.na(fold_ids))) stop("fold_ids must not contain NA")
+    if (any(fold_ids < 1) || any(fold_ids != floor(fold_ids)))
+      stop("fold_ids must be positive integers starting at 1")
+    
+    k <- max(fold_ids)
+    if (k < 2) stop("at least 2 folds are required")
+    
+    # Ensure every fold label 1..k appears at least once
+    missing_levels <- setdiff(seq_len(k), sort(unique(fold_ids)))
+    if (length(missing_levels) > 0L)
+      stop("each fold id from 1..k must appear at least once")
+  }
   
   # [ToDo] Calculate LASSO on each fold using fitLASSO,
   # and perform any additional calculations needed for CV(lambda) and SE_CV(lambda)
