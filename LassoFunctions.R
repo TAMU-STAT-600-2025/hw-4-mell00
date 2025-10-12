@@ -257,9 +257,12 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   std <- standardizeXY(X, Y)
   Xtilde <- std$Xtilde; Ytilde <- std$Ytilde
   
-  # [ToDo] Fit Lasso on a sequence of values using fitLASSOstandardized_seq
+  # Fit Lasso on a sequence of values using fitLASSOstandardized_seq
   # (make sure the parameters carry over)
  
+  seq_fit <- fitLASSOstandardized_seq(Xtilde, Ytilde, lambda_seq = lambda_seq,
+                                      n_lambda = n_lambda, eps = eps)
+  
   # [ToDo] Perform back scaling and centering to get original intercept and coefficient vector
   # for each lambda
   
