@@ -172,6 +172,13 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   if (!is.numeric(n_lambda) || length(n_lambda) != 1L || n_lambda < 1)
     stop("n_lambda must be a positive integer")
 
+  # helper function to sanitize/sort lambda vectors
+  .finalize_lambda <- function(v) {
+    v <- v[is.finite(v) & v >= 0]        # keep finite, non-negative
+    v <- sort(as.numeric(v), decreasing = TRUE) # enforce decreasing order
+    v <- unique(v)                        # drop duplicates
+    v
+  }
  
   # Check for the user-supplied lambda-seq (see below)
   # If lambda_seq is supplied, only keep values that are >= 0,
@@ -182,7 +189,7 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   used_supplied <- FALSE
   if (!is.null(lambda_seq)) {
     if (!is.numeric(lambda_seq)) stop("supplied lambda_seq must be numeric")
-    lambda_seq <- sort(lambda_seq[lambda_seq >= 0], decreasing = TRUE)
+    lambda_seq <- .finalize_lambda(lambda_seq) # sort supplied sequence
     if (length(lambda_seq) == 0L) {
       warning("No non-negative values in supplied lambda_seq; computing lambda_seq")
     } else {
@@ -198,23 +205,28 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   if (!used_supplied) {
     
     # lambda_max = max_j |(1/n) Xtilde_j^T Ytilde|
-    n_inv <- 1 / n
-    
     # compute cross-products
-    lam_candidates <- abs(colSums(Xtilde * Ytilde) * n_inv)
-    lambda_max <- max(lam_candidates)
-    if (!is.finite(lambda_max)) lambda_max <- 0
-    if (lambda_max <= 0) {
-      
-      # if perfectly orthogonal or Ytilde==0, use flat sequence of zeros
+    lam_candidates <- abs(drop(crossprod(Xtilde, Ytilde))) / n
+    lambda_max <- suppressWarnings(max(lam_candidates))
+    
+    
+    if (!is.finite(lambda_max) || lambda_max < .Machine$double.eps) {
+      # fallback -> all zeros path
       lambda_seq <- rep(0, n_lambda)
     } else {
-      lambda_seq <- exp(seq(log(lambda_max), log(0.01), length.out = n_lambda))
+      # geometric path relative to lambda_max (1% of lambda_max)
+      lambda_min <- lambda_max * 0.01
+      lambda_seq <- exp(seq(log(lambda_max), log(lambda_min), length.out = n_lambda))
     }
+    
+    
+    lambda_seq <- .finalize_lambda(lambda_seq) # clean generated seq
+    if (length(lambda_seq) == 0L) lambda_seq <- rep(0, n_lambda) # final fallback
   }
   
+  
   # Ensure descending sort
-  lambda_seq <- sort(as.numeric(lambda_seq), decreasing = TRUE)
+  lambda_seq <- sort(lambda_seq, decreasing = TRUE) 
   
   # Apply fitLASSOstandardized going from largest to smallest lambda 
   # (make sure supplied eps is carried over). 
