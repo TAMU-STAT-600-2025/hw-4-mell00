@@ -1,7 +1,5 @@
 # Load the riboflavin data
 
-# Uncomment below to install hdi package if you don't have it already; 
-# install.packages("hdi") 
 library(hdi)
 data(riboflavin) # this puts list with name riboflavin into the R environment, y - outcome, x - gene expression
 dim(riboflavin$x) # n = 71 samples by p = 4088 predictors
@@ -18,8 +16,8 @@ Y = riboflavin$y
 # Source your lasso functions
 source("LassoFunctions.R")
 
-# [ToDo] Use your fitLASSO function on the riboflavin data with 60 tuning parameters
-
+# Use your fitLASSO function on the riboflavin data with 60 tuning parameters
+fit60 <- fitLASSO(X, Y, n_lambda = 60)
 # [ToDo] Based on the above output, plot the number of non-zero elements in each beta versus the value of tuning parameter
 
 # [ToDo] Use microbenchmark 10 times to check the timing of your fitLASSO function above with 60 tuning parameters
