@@ -173,12 +173,22 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
     stop("n_lambda must be a positive integer")
 
  
-  # [ToDo] Check for the user-supplied lambda-seq (see below)
+  # Check for the user-supplied lambda-seq (see below)
   # If lambda_seq is supplied, only keep values that are >= 0,
   # and make sure the values are sorted from largest to smallest.
   # If none of the supplied values satisfy the requirement,
   # print the warning message and proceed as if the values were not supplied.
   
+  used_supplied <- FALSE
+  if (!is.null(lambda_seq)) {
+    if (!is.numeric(lambda_seq)) stop("supplied lambda_seq must be numeric")
+    lambda_seq <- sort(lambda_seq[lambda_seq >= 0], decreasing = TRUE)
+    if (length(lambda_seq) == 0L) {
+      warning("No non-negative values in supplied lambda_seq; computing lambda_seq")
+    } else {
+      used_supplied <- TRUE
+    }
+  }
   
   # If lambda_seq is not supplied, calculate lambda_max 
   # (the minimal value of lambda that gives zero solution),
