@@ -239,13 +239,19 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   return(list(lambda_seq = lambda_seq, beta_mat = beta_mat, fmin_vec = fmin_vec))
 }
 
-# [ToDo] Fit LASSO on original data using a sequence of lambda values
+# Fit LASSO on original data using a sequence of lambda values
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
 # lambda_seq - sequence of tuning parameters, optional
 # n_lambda - length of desired tuning parameter sequence, is only used when the tuning sequence is not supplied by the user
 # eps - precision level for convergence assessment, default 0.001
 fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
+  if (is.null(dim(X))) stop("X must be a 2D matrix")
+  if (!is.numeric(X) || !is.numeric(Y))
+    stop("X and Y must be numeric")
+  n <- nrow(X); p <- ncol(X)
+  if (length(Y) != n) stop("length of Y must = number of rows in X")
+  if (anyNA(X) || anyNA(Y)) stop("missing values not supported")
   # [ToDo] Center and standardize X,Y based on standardizeXY function
  
   # [ToDo] Fit Lasso on a sequence of values using fitLASSOstandardized_seq
