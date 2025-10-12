@@ -293,6 +293,35 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
 # fold_ids - (optional) vector of length n specifying the folds assignment (from 1 to max(folds_ids)), if supplied the value of k is ignored 
 # eps - precision level for convergence assessment, default 0.001
 cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NULL, eps = 0.001){
+  
+  if (is.null(dim(X))) stop("X must be a 2D matrix")
+  if (!is.numeric(X) || !is.numeric(Y))
+    stop("X and Y must be numeric")
+  n <- nrow(X); p <- ncol(X)
+  if (length(Y) != n) stop("length of Y must = number of rows in X")
+  if (anyNA(X) || anyNA(Y)) stop("missing values not supported")
+  if (!is.null(lambda_seq) && !is.numeric(lambda_seq)) stop("supplied lambda_seq must be numeric")
+  if (!is.numeric(n_lambda) || length(n_lambda) != 1L || n_lambda < 1)
+    stop("n_lambda must be a positive integer")
+  if (!is.null(fold_ids)) {
+    if (length(fold_ids) != n) stop("fold_ids must have length n")
+    if (any(is.na(fold_ids))) stop("fold_ids must not contain NA")
+    if (any(fold_ids < 1)) stop("fold_ids must be positive integers starting at 1")
+    k <- max(fold_ids)
+    if (k < 2) stop("at least 2 folds are required")
+    
+    # ensure no empty folds
+    for (ff in 1:k) {
+      if (!any(fold_ids == ff)) stop("each fold id from 1..max(fold_ids) must appear at least once")
+    }
+  } else {
+    if (!is.numeric(k) || length(k) != 1L || k < 2) stop("k must be an integer >= 2")
+    if (k > n) stop("k cannot exceed n")
+    
+    # random, roughly equal folds
+    fold_ids <- sample(rep(1:k, length.out = n))
+  }
+  
   # [ToDo] Fit Lasso on original data using fitLASSO
  
   # [ToDo] If fold_ids is NULL, split the data randomly into k folds.
