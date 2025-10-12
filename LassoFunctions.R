@@ -369,8 +369,33 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
       stop("each fold id from 1..k must appear at least once")
   }
   
-  # [ToDo] Calculate LASSO on each fold using fitLASSO,
+  # Calculate LASSO on each fold using fitLASSO,
   # and perform any additional calculations needed for CV(lambda) and SE_CV(lambda)
+  
+  fold_means <- matrix(NA_real_, nrow = k, ncol = m)
+  
+  for (fold in 1:k) {
+    val_idx <- which(fold_ids == fold)
+    tr_idx  <- setdiff(seq_len(n), val_idx)
+    
+    Xtr <- X[tr_idx, , drop = FALSE]
+    Ytr <- Y[tr_idx]
+    Xval <- X[val_idx, , drop = FALSE]
+    Yval <- Y[val_idx]
+    
+    fit_tr <- fitLASSO(Xtr, Ytr, lambda_seq = lambda_seq_used,
+                       n_lambda = length(lambda_seq_used), eps = eps)
+    
+    # predictions at each lambda on validation fold
+    preds <- sweep(Xval %*% fit_tr$beta_mat, 2, fit_tr$beta0_vec, FUN = "+")
+    se_mat <- (matrix(Yval, nrow = length(Yval), ncol = m) - preds)^2
+    
+    # fold-average MSE for each lambda
+    fold_means[fold, ] <- colMeans(se_mat)
+  }
+  
+  cvm  <- colMeans(fold_means) # CV(lambda)
+  cvse <- apply(fold_means, 2, sd) / sqrt(k) # SE_CV(lambda)
   
   # [ToDo] Find lambda_min
 
