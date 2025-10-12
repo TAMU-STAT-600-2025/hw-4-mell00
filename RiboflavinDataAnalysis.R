@@ -44,9 +44,16 @@ cat(sprintf("Median time over 10 runs: %.3f seconds\n", median_seconds))
 # 2.042 sec
 
 # Use cvLASSO function on the riboflavin data with 30 tuning parameters (just 30 to make it faster)
-
 set.seed(42)  # seed for reproducibility
 cvfit <- cvLASSO(X, Y, n_lambda = 30, k = 5)
 
-# [ToDo] Based on the above output, plot the value of CV(lambda) versus tuning parameter. Note that this will change with each run since the folds are random, this is ok.
+# Based on the above output, plot the value of CV(lambda) versus tuning parameter. Note that this will change with each run since the folds are random, this is ok.
+plot(cvfit$lambda_seq, cvfit$cvm, type = "b", log = "x",
+     xlab = expression(lambda),
+     ylab = "CV MSE",
+     main = "Cross-Validation Curve (LASSO)")
 
+# SE error bars
+arrows(x0 = cvfit$lambda_seq, y0 = cvfit$cvm - cvfit$cvse,
+       x1 = cvfit$lambda_seq, y1 = cvfit$cvm + cvfit$cvse,
+       angle = 90, code = 3, length = 0.05)
