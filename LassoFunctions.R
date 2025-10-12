@@ -161,7 +161,17 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
 #             is only used when the tuning sequence is not supplied by the user
 # eps - precision level for convergence assessment, default 0.001
 fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
-  # [ToDo] Check that n is the same between Xtilde and Ytilde
+  # Check that n is the same between Xtilde and Ytilde
+  
+  if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
+  if (!is.numeric(Xtilde) || !is.numeric(Ytilde))
+    stop("Xtilde and Ytilde must be numeric")
+  n <- nrow(Xtilde); p <- ncol(Xtilde)
+  if (length(Ytilde) != n) stop("length of Ytilde must match number of rows in Xtilde")
+  if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values not supported")
+  if (!is.numeric(n_lambda) || length(n_lambda) != 1L || n_lambda < 1)
+    stop("n_lambda must be a positive integer")
+
  
   # [ToDo] Check for the user-supplied lambda-seq (see below)
   # If lambda_seq is supplied, only keep values that are >= 0,
