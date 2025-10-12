@@ -193,7 +193,28 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   # If lambda_seq is not supplied, calculate lambda_max 
   # (the minimal value of lambda that gives zero solution),
   # and create a sequence of length n_lambda as
-  lambda_seq = exp(seq(log(lambda_max), log(0.01), length = n_lambda))
+  # lambda_seq = exp(seq(log(lambda_max), log(0.01), length = n_lambda))
+  
+  if (!used_supplied) {
+    
+    # lambda_max = max_j |(1/n) Xtilde_j^T Ytilde|
+    n_inv <- 1 / n
+    
+    # compute cross-products
+    lam_candidates <- abs(colSums(Xtilde * Ytilde) * n_inv)
+    lambda_max <- max(lam_candidates)
+    if (!is.finite(lambda_max)) lambda_max <- 0
+    if (lambda_max <= 0) {
+      
+      # if perfectly orthogonal or Ytilde==0, use flat sequence of zeros
+      lambda_seq <- rep(0, n_lambda)
+    } else {
+      lambda_seq <- exp(seq(log(lambda_max), log(0.01), length.out = n_lambda))
+    }
+  }
+  
+  # Ensure descending sort
+  lambda_seq <- sort(as.numeric(lambda_seq), decreasing = TRUE)
   
   # [ToDo] Apply fitLASSOstandardized going from largest to smallest lambda 
   # (make sure supplied eps is carried over). 
