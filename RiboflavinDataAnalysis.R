@@ -19,6 +19,9 @@ source("LassoFunctions.R")
 # Use your fitLASSO function on the riboflavin data with 60 tuning parameters
 fit60 <- fitLASSO(X, Y, n_lambda = 60)
 
+# check that dimensions are square
+#length(fit60$lambda_seq); ncol(fit60$beta_mat)
+
 # Based on the above output, plot the number of non-zero elements in each beta versus the value of tuning parameter
 nnz <- colSums(abs(fit60$beta_mat) > 1e-8)  # treat very small values as 0
 plot(fit60$lambda_seq, nnz, type = "b", log = "x",
@@ -26,9 +29,19 @@ plot(fit60$lambda_seq, nnz, type = "b", log = "x",
      ylab = "# non-zero coefficients",
      main = "Sparsity vs Tuning Parameter (LASSO)")
 
-# [ToDo] Use microbenchmark 10 times to check the timing of your fitLASSO function above with 60 tuning parameters
+# Use microbenchmark 10 times to check the timing of your fitLASSO function above with 60 tuning parameters
+library(microbenchmark)
+mb <- microbenchmark(
+  fitLASSO(X, Y, n_lambda = 60),
+  times = 10
+)
+print(mb)
 
-# [ToDo] Report your median timing in the comments here: (~5.8 sec for Irina on her laptop)
+# Report your median timing in the comments here: (~5.8 sec for Irina on her laptop)
+median_seconds <- median(mb$time) / 1e9  # convert nanoseconds into seconds
+cat(sprintf("Median time over 10 runs: %.3f seconds\n", median_seconds))
+
+# 2.042 sec
 
 # [ToDo] Use cvLASSO function on the riboflavin data with 30 tuning parameters (just 30 to make it faster)
 
