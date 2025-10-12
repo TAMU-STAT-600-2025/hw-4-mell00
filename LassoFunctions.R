@@ -263,8 +263,18 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   seq_fit <- fitLASSOstandardized_seq(Xtilde, Ytilde, lambda_seq = lambda_seq,
                                       n_lambda = n_lambda, eps = eps)
   
-  # [ToDo] Perform back scaling and centering to get original intercept and coefficient vector
+  # Perform back scaling and centering to get original intercept and coefficient vector
   # for each lambda
+  
+  betat <- seq_fit$beta_mat
+  m <- ncol(betat)
+  beta_mat <- betat
+  
+  # back-scale: beta_original = beta_tilde / weights
+  beta_mat <- sweep(beta_mat, 1, std$weights, FUN = "/")
+  
+  # intercept: beta0 = Ymean - sum_j Xmean_j * beta_j
+  beta0_vec <- as.numeric(std$Ymean - crossprod(std$Xmeans, beta_mat))
   
   # Return output
   # lambda_seq - the actual sequence of tuning parameters used
