@@ -397,10 +397,16 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
   cvm  <- colMeans(fold_means) # CV(lambda)
   cvse <- apply(fold_means, 2, sd) / sqrt(k) # SE_CV(lambda)
   
-  # [ToDo] Find lambda_min
-
-  # [ToDo] Find lambda_1SE
+  # Find lambda_min
+  idx_min <- which.min(cvm)
+  lambda_min <- lambda_seq_used[idx_min]
   
+  # Find lambda_1SE
+  thresh <- cvm[idx_min] + cvse[idx_min]
+  idx_1se <- which(cvm <= thresh)
+  
+  # choose the largest lambda that satisfies the 1SE rule
+  lambda_1se <- lambda_seq_used[min(idx_1se)]
   
   # Return output
   # Output from fitLASSO on the whole data
