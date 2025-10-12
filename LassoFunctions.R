@@ -216,9 +216,21 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   # Ensure descending sort
   lambda_seq <- sort(as.numeric(lambda_seq), decreasing = TRUE)
   
-  # [ToDo] Apply fitLASSOstandardized going from largest to smallest lambda 
+  # Apply fitLASSOstandardized going from largest to smallest lambda 
   # (make sure supplied eps is carried over). 
   # Use warm starts strategy discussed in class for setting the starting values.
+  
+  m <- length(lambda_seq)
+  beta_mat <- matrix(0, nrow = p, ncol = m)
+  fmin_vec <- numeric(m)
+  beta_start <- rep(0, p)
+  for (t in seq_len(m)) {
+    fit_t <- fitLASSOstandardized(Xtilde, Ytilde, lambda = lambda_seq[t],
+                                  beta_start = beta_start, eps = eps)
+    beta_mat[, t] <- fit_t$beta
+    fmin_vec[t] <- fit_t$fmin
+    beta_start <- fit_t$beta # warm start
+  }
   
   # Return output
   # lambda_seq - the actual sequence of tuning parameters used
