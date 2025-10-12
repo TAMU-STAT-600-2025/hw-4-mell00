@@ -252,8 +252,11 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   n <- nrow(X); p <- ncol(X)
   if (length(Y) != n) stop("length of Y must = number of rows in X")
   if (anyNA(X) || anyNA(Y)) stop("missing values not supported")
-  # [ToDo] Center and standardize X,Y based on standardizeXY function
+  # Center and standardize X,Y based on standardizeXY function
  
+  std <- standardizeXY(X, Y)
+  Xtilde <- std$Xtilde; Ytilde <- std$Ytilde
+  
   # [ToDo] Fit Lasso on a sequence of values using fitLASSOstandardized_seq
   # (make sure the parameters carry over)
  
