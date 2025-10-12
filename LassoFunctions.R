@@ -322,7 +322,11 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
     fold_ids <- sample(rep(1:k, length.out = n))
   }
   
-  # [ToDo] Fit Lasso on original data using fitLASSO
+  # Fit Lasso on original data using fitLASSO
+  
+  full_fit <- fitLASSO(X, Y, lambda_seq = lambda_seq, n_lambda = n_lambda, eps = eps)
+  lambda_seq_used <- full_fit$lambda_seq
+  m <- length(lambda_seq_used)
  
   # [ToDo] If fold_ids is NULL, split the data randomly into k folds.
   # If fold_ids is not NULL, split the data according to supplied fold_ids.
