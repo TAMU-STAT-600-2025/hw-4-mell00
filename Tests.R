@@ -138,6 +138,8 @@ n_ok <- 0L
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
 
+
+
 ## 8) Adversarial inputs
 
 # huge magnitude X and Y stay finite; all-zero Y results in zero beta, zero intercepts
@@ -157,6 +159,24 @@ n_ok <- 0L
   fit_zero <- fitLASSO(X_big, Y_zero, n_lambda = 20, eps = 1e-3)
   if (max(abs(fit_zero$beta_mat)) > 1e-8) stop(test_name, " (zero-Y: betas not zero)")
   if (max(abs(fit_zero$beta0_vec)) > 1e-8) stop(test_name, " (zero-Y: intercepts not zero)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
+
+# all-constant X -> Xtilde becomes zero, betas = zero, and intercept = mean(Y)
+{
+  test_name <- "all-constant X"
+  n <- 30; p <- 10
+  Xc <- matrix(5, n, p)
+  Yc <- rnorm(n)
+  stdc <- standardizeXY(Xc, Yc)
+  if (sum(stdc$Xtilde^2) != 0) stop(test_name, " (Xtilde not all zero)")
+  
+  sf_c <- fitLASSOstandardized_seq(stdc$Xtilde, stdc$Ytilde, n_lambda = 10)
+  if (length(sf_c$lambda_seq) != ncol(sf_c$beta_mat)) stop(test_name, " (seq shapes mismatch)")
+  
+  fit_c <- fitLASSO(Xc, Yc, n_lambda = 10)
+  if (max(abs(fit_c$beta_mat)) > 1e-10) stop(test_name, " (betas not zero)")
+  if (abs(fit_c$beta0_vec[1] - mean(Yc)) > 1e-10) stop(test_name, " (intercept != mean(Y))")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
 
