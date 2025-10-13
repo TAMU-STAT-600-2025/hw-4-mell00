@@ -195,3 +195,16 @@ n_ok <- 0L
   if (!all(diff(sf$lambda_seq) <= 0)) stop(test_name, " (lambda not decreasing)")
   cat(test_name, "PASSED\n"); n_ok <-  n_ok + 1L
 }
+
+# very large lambda yields all-zero solution
+{
+  test_name <- "very large lambda yields all-zero solution"
+  n <- 50; p <- 10
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam_max <- max(abs(drop(crossprod(std$Xtilde, std$Ytilde)))/n)
+  fit_vl <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam_max * 100, eps = 1e-6)
+  if (max(abs(fit_vl$beta)) > 1e-10) stop(test_name, " (beta not zero)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
