@@ -303,7 +303,7 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
 }
 
 
-# [ToDo] Fit LASSO and perform cross-validation to select the best fit
+# Fit LASSO and perform cross-validation to select the best fit
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
 # lambda_seq - sequence of tuning parameters, optional
@@ -407,7 +407,7 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
     
     # predictions at each lambda on validation fold
     preds <- sweep(Xval %*% fit_tr$beta_mat, 2, fit_tr$beta0_vec, FUN = "+")
-    se_mat <- (matrix(Yval, nrow = length(Yval), ncol = m) - preds)^2
+    se_mat <- (matrix(Yval, nrow = length(Yval), ncol = m) - preds) ^ 2
     
     # fold-average MSE for each lambda
     fold_means[fold, ] <- colMeans(se_mat)
