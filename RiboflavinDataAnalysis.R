@@ -41,7 +41,7 @@ print(mb)
 median_seconds <- median(mb$time) / 1e9  # convert nanoseconds into seconds
 cat(sprintf("Median time over 10 runs: %.3f seconds\n", median_seconds))
 
-# 1.458 sec
+# 0.088 sec
 
 # Use cvLASSO function on the riboflavin data with 30 tuning parameters (just 30 to make it faster)
 set.seed(42)  # seed for reproducibility
