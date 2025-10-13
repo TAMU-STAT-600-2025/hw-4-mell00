@@ -246,3 +246,16 @@ n_ok <- 0L
   if (!(tight$fmin <= loose$fmin + 1e-8)) stop(test_name, " (tight epsilon worse objective)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+# check for L1 path monotonicity
+{
+  test_name <- "L1 norm increases as lambda decreases"
+  set.seed(9)
+  n <- 100; p <- 30
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  sf <- fitLASSOstandardized_seq(std$Xtilde, std$Ytilde, n_lambda = 40, eps = 1e-5)
+  l1 <- colSums(abs(sf$beta_mat))
+  if (any(diff(l1) < -1e-10)) stop(test_name, " (beta L1 norm decreased along decreasing lambda)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
