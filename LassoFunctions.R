@@ -151,7 +151,7 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   return(list(beta = beta, fmin = fmin))
 }
 
-# [ToDo] Fit LASSO on standardized data for a sequence of lambda values. Sequential version of a previous function.
+# Fit LASSO on standardized data for a sequence of lambda values. Sequential version of a previous function.
 # Xtilde - centered and scaled X, n x p
 # Ytilde - centered Y, n x 1
 # lamdba_seq - sequence of tuning parameters, optional
