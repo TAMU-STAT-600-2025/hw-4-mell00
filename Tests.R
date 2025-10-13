@@ -285,3 +285,28 @@ n_ok <- 0L
   if (max(abs(fit_big$beta)) > 1e-10) stop(test_name, " (beta not zero at huge lambda)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 10) TOY EXAMPLE #2
+# lambda = 0 equals OLS; lambda > 0 equals soft-threshold
+{
+  test_name <- "toy example #2 lambda = 0 OLS, lambda > 0 soft-threshold"
+  set.seed(5)
+  n <- 60; p <- 5
+  A <- matrix(rnorm(n*p), n, p); Q <- qr.Q(qr(A))
+  Xo <- sqrt(n) * Q
+  beta_star <- c(1.5, -2, 0, 0.7, 0)
+  y <- as.numeric(Xo %*% beta_star + rnorm(n, sd = 0.02))
+  
+  # lambda = 0 = OLS
+  lam0 <- 0
+  fit0 <- fitLASSOstandardized(Xo, y, lambda = lam0, eps = 1e-9)
+  corr <- drop(crossprod(Xo, y)) / n
+  if (max(abs(fit0$beta - corr)) > 2e-4) stop(test_name, " (OLS mismatch at lambda = 0)")
+  
+  # lambda > 0 = soft-threshold
+  lam <- 0.25
+  fit1 <- fitLASSOstandardized(Xo, y, lambda = lam, eps = 1e-9)
+  beta_soft <- sign(corr) * pmax(abs(corr) - lam, 0)
+  if (max(abs(fit1$beta - beta_soft)) > 5e-3) stop(test_name, " (soft-threshold mismatch)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
