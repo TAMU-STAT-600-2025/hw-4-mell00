@@ -68,7 +68,7 @@ lasso <- function(Xtilde, Ytilde, beta, lambda){
     stop("lambda must be a non-negative numeric scalar")
   
   resid <- as.numeric(Ytilde - Xtilde %*% beta)
-  (sum(resid * resid) / (2 * n)) + lambda * sum(abs(beta))
+  (as.numeric(crossprod(resid)) / (2 * n)) + lambda * sum(abs(beta))
 }
 
 # Fit LASSO on standardized data for a given lambda
@@ -108,7 +108,11 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   
   # Initialize residual and objective
   r <- as.numeric(Ytilde - Xtilde %*% beta)
-  f_prev <- (sum(r * r) / (2 * n)) + lambda * sum(abs(beta))
+  l1 <- sum(abs(beta))
+  f_prev <- (as.numeric(crossprod(r)) / (2 * n)) + lambda * l1
+  
+  # Cache columns to reduce repeated [, j] extraction overhead
+  Xcols <- lapply(seq_len(p), function(j) Xtilde[, j])
   
   # Coordinate-descent implementation. 
   # Stop when the difference between objective functions is less than eps for the first time.
@@ -119,23 +123,27 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
     for (j in seq_len(p)) {
       if (z[j] == 0) { next }  # skip if column is all 0s
       bj_old <- beta[j]
+      xj <- Xcols[[j]]
       
       # re-add old contribution
-      r <- r + Xtilde[, j] * bj_old
+      r <- r + xj * bj_old
       
       # partial residual correlation
-      rho <- sum(Xtilde[, j] * r) / n
+      rho <- sum(xj * r) / n
       
       # soft-threshold update
       bj_new <- soft(rho, lambda) / z[j]
       beta[j] <- bj_new
       
+      # update l1 incrementally
+      l1 <- l1 + abs(bj_new) - abs(bj_old)
+      
       # remove new contribution
-      r <- r - Xtilde[, j] * bj_new
+      r <- r - xj * bj_new
     }
     
     # compute current objective
-    f_curr <- (sum(r * r) / (2 * n)) + lambda * sum(abs(beta))
+    f_curr <- (as.numeric(crossprod(r)) / (2 * n)) + lambda * l1
     
     # convergence check: stop at the first time the difference < eps
     if (abs(f_prev - f_curr) < eps) {
@@ -151,6 +159,65 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
   return(list(beta = beta, fmin = fmin))
 }
 
+# helper function to perform fast coordinate-descent on possibly restricted active set
+.cd_solve_precomp <- function(X, Xcols, Ytilde, z, lambda, beta_start, eps,
+                              active = NULL, kkt_tol = 1e-7) {
+  n  <- nrow(X); p <- ncol(X)
+  beta <- as.numeric(beta_start)
+  
+  # initialize residual and l1
+  r <- as.numeric(Ytilde - X %*% beta)
+  l1 <- sum(abs(beta))
+  
+  # indices to sweep this round
+  idx <- if (is.null(active)) seq_len(p) else sort(unique(active))
+  
+  repeat {
+    f_prev <- (as.numeric(crossprod(r)) / (2 * n)) + lambda * l1
+    for (j in idx) {
+      if (z[j] == 0) next
+      bj_old <- beta[j]
+      xj <- Xcols[[j]]
+      
+      # re-add old contribution
+      r <- r + xj * bj_old
+      
+      # partial residual correlation
+      rho <- as.numeric(crossprod(xj, r)) / n
+      
+      # soft-threshold update
+      bj_new <- soft(rho, lambda) / z[j]
+      beta[j] <- bj_new
+      
+      # update l1 incrementally
+      l1 <- l1 + abs(bj_new) - abs(bj_old)
+      
+      # remove new contribution
+      r <- r - xj * bj_new
+    }
+    f_curr <- (as.numeric(crossprod(r)) / (2 * n)) + lambda * l1
+    if (abs(f_prev - f_curr) < eps) break
+  }
+  
+  # KKT check for variables outside idx
+  if (length(idx) < p) {
+    g <- as.numeric(crossprod(X, r)) / n # (1/n) X^T r
+    outside <- setdiff(seq_len(p), idx)
+    viol <- outside[ which(abs(g[outside]) > (lambda + kkt_tol)) ]
+    if (length(viol)) {
+      
+      # expand active set and resolve
+      idx <- sort(unique(c(idx, viol)))
+      return(.cd_solve_precomp(X, Xcols, Ytilde, z, lambda, beta, eps,
+                               active = idx, kkt_tol = kkt_tol))
+    }
+  }
+  
+  list(beta = beta,
+       fmin = (as.numeric(crossprod(r)) / (2 * n)) + lambda * l1,
+       r = r)
+}
+
 # Fit LASSO on standardized data for a sequence of lambda values. Sequential version of a previous function.
 # Xtilde - centered and scaled X, n x p
 # Ytilde - centered Y, n x 1
@@ -159,8 +226,8 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
 #             is only used when the tuning sequence is not supplied by the user
 # eps - precision level for convergence assessment, default 0.001
 fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
-  # Check that n is the same between Xtilde and Ytilde
   
+  # Check that n is the same between Xtilde and Ytilde
   if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
   if (!is.numeric(Xtilde) || !is.numeric(Ytilde))
     stop("Xtilde and Ytilde must be numeric")
@@ -169,7 +236,7 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   if (anyNA(Xtilde) || anyNA(Ytilde)) stop("missing values not supported")
   if (!is.numeric(n_lambda) || length(n_lambda) != 1L || n_lambda < 1)
     stop("n_lambda must be a positive integer")
-
+  
   # helper function to sanitize/sort lambda vectors
   .finalize_lambda <- function(v) {
     v <- v[is.finite(v) & v >= 0]        # keep finite, non-negative
@@ -177,7 +244,7 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
     v <- unique(v)                        # drop duplicates
     v
   }
- 
+  
   # Check for the user-supplied lambda-seq (see below)
   # If lambda_seq is supplied, only keep values that are >= 0,
   # and make sure the values are sorted from largest to smallest.
@@ -234,12 +301,34 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   beta_mat <- matrix(0, nrow = p, ncol = m)
   fmin_vec <- numeric(m)
   beta_start <- rep(0, p)
+  
+  # Precompute once for the whole path
+  z     <- colSums(Xtilde * Xtilde) / n
+  Xcols <- lapply(seq_len(p), function(j) Xtilde[, j])
+  r_prev <- as.numeric(Ytilde)  # residual at beta = 0
+  g_prev <- as.numeric(crossprod(Xtilde, r_prev)) / n
+  
   for (t in seq_len(m)) {
-    fit_t <- fitLASSOstandardized(Xtilde, Ytilde, lambda = lambda_seq[t],
-                                  beta_start = beta_start, eps = eps)
+    lam <- lambda_seq[t]
+    if (t == 1) {
+      # for the first lambda, use support from zero-solution screening
+      active <- which(abs(g_prev) >= lam)
+      fit_t <- .cd_solve_precomp(Xtilde, Xcols, Ytilde, z, lam, beta_start, eps,
+                                 active = active, kkt_tol = 1e-7)
+    } else {
+      lam_prev <- lambda_seq[t - 1L]
+      # keep j with |g_prev_j| >= 2*lam - lam_prev, or previously active
+      strong_keep <- which(abs(g_prev) >= (2 * lam - lam_prev))
+      active <- union(which(beta_start != 0), strong_keep)
+      fit_t <- .cd_solve_precomp(Xtilde, Xcols, Ytilde, z, lam, beta_start, eps,
+                                 active = active, kkt_tol = 1e-7)
+    }
+    
     beta_mat[, t] <- fit_t$beta
-    fmin_vec[t] <- fit_t$fmin
-    beta_start <- fit_t$beta # warm start
+    fmin_vec[t]   <- fit_t$fmin
+    beta_start    <- fit_t$beta
+    r_prev        <- fit_t$r
+    g_prev        <- as.numeric(crossprod(Xtilde, r_prev)) / n
   }
   
   # Return output
@@ -263,17 +352,17 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   if (length(Y) != n) stop("length of Y must = number of rows in X")
   if (anyNA(X) || anyNA(Y)) stop("missing values not supported")
   # Center and standardize X,Y based on standardizeXY function
- 
+  
   std <- standardizeXY(X, Y)
   Xtilde <- std$Xtilde; Ytilde <- std$Ytilde
   
   # Fit Lasso on a sequence of values using fitLASSOstandardized_seq
   # (make sure the parameters carry over)
- 
+  
   seq_fit <- fitLASSOstandardized_seq(Xtilde, Ytilde, lambda_seq = lambda_seq,
                                       n_lambda = n_lambda, eps = eps)
   
-  # check—λ sequence length must match solution columns
+  # check—lambda sequence length must match solution columns
   if (length(seq_fit$lambda_seq) != ncol(seq_fit$beta_mat)) {
     stop(sprintf("internal error: length(lambda_seq)=%d != ncol(beta_mat)=%d",
                  length(seq_fit$lambda_seq), ncol(seq_fit$beta_mat)))
@@ -346,7 +435,7 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
   full_fit <- fitLASSO(X, Y, lambda_seq = lambda_seq, n_lambda = n_lambda, eps = eps)
   lambda_seq_used <- full_fit$lambda_seq
   m <- length(lambda_seq_used)
- 
+  
   # If fold_ids is NULL, split the data randomly into k folds.
   # If fold_ids is not NULL, split the data according to supplied fold_ids.
   
@@ -407,7 +496,7 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
     
     # predictions at each lambda on validation fold
     preds <- sweep(Xval %*% fit_tr$beta_mat, 2, fit_tr$beta0_vec, FUN = "+")
-    se_mat <- (matrix(Yval, nrow = length(Yval), ncol = m) - preds) ^ 2
+    se_mat <- sweep(preds, 1, Yval, FUN = "-") ^ 2
     
     # fold-average MSE for each lambda
     fold_means[fold, ] <- colMeans(se_mat)
@@ -438,7 +527,6 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
   # cvm - values of CV(lambda) for each lambda
   # cvse - values of SE_CV(lambda) for each lambda
   return(list(lambda_seq = lambda_seq_used, beta_mat = full_fit$beta_mat,
-    beta0_vec  = full_fit$beta0_vec, fold_ids   = fold_ids, lambda_min = lambda_min, 
-    lambda_1se = lambda_1se, cvm = cvm, cvse = cvse))
+        beta0_vec  = full_fit$beta0_vec, fold_ids   = fold_ids, lambda_min = lambda_min, 
+        lambda_1se = lambda_1se, cvm = cvm, cvse = cvse))
 }
-
