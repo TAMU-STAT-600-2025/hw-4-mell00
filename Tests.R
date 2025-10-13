@@ -40,3 +40,18 @@ n_ok <- 0L
   if (!isTRUE(all.equal(soft(2, 0),  2, tolerance = 1e-12)))  stop(test_name, " (soft(2,0))")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 3) lasso objective
+
+{
+  test_name <- "lasso() objective increases with lambda for a fixed beta"
+  n <- 30; p <- 5
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  beta0 <- rep(0, p)
+  f1 <- lasso(std$Xtilde, std$Ytilde, beta0, lambda = 0.1)
+  f2 <- lasso(std$Xtilde, std$Ytilde, beta0, lambda = 0.3)
+  if (!(f2 > f1 - 1e-15)) stop(test_name)
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
