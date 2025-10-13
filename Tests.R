@@ -208,3 +208,16 @@ n_ok <- 0L
   if (max(abs(fit_vl$beta)) > 1e-10) stop(test_name, " (beta not zero)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+# fitting remains numerically stable and outputs are finite
+{
+  test_name <- "p >> n with collinearity remains stable and finite"
+  n <- 30; p <- 300
+  X <- matrix(rnorm(n*p), n, p)
+  X[,2] <- X[,1] + rnorm(n, sd = 1e-6)  # strong collinearity
+  Y <- rnorm(n)
+  fit <- fitLASSO(X, Y, n_lambda = 25, eps = 1e-3)
+  if (length(fit$lambda_seq) != ncol(fit$beta_mat)) stop(test_name, " (shapes mismatch)")
+  if (!all(is.finite(fit$beta_mat))) stop(test_name, " (non-finite betas)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
