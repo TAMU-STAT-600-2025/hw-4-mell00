@@ -221,3 +221,15 @@ n_ok <- 0L
   if (!all(is.finite(fit$beta_mat))) stop(test_name, " (non-finite betas)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+# test cvLASSO with custom, unbalanced folds
+{
+  test_name <- "cvLASSO with custom folds"
+  n <- 45; p <- 25
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  fold_ids <- rep(1:5, length.out = n); fold_ids[1:3] <- 1
+  cv <- cvLASSO(X, Y, n_lambda = 15, fold_ids = fold_ids, eps = 1e-3)
+  if (length(cv$lambda_seq) != length(cv$cvm)) stop(test_name, " (cvm mismatch)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
