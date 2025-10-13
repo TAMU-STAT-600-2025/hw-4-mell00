@@ -115,3 +115,25 @@ n_ok <- 0L
   if (abs(fit$beta0_vec[1] - mean(Y)) > 1e-6) stop(test_name, " (beta0[1] != mean(Y))")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 7) cvLASSO outputs & selection rules
+
+{
+  test_name <- "cvLASSO shapes & selection (lambda_min, lambda_1se)"
+  n <- 90; p <- 12
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  set.seed(42)
+  cv <- cvLASSO(X, Y, n_lambda = 25, k = 5, eps = 1e-3)
+  
+  if (length(cv$lambda_seq) != length(cv$cvm))  stop(test_name, " (cvm length mismatch)")
+  if (length(cv$cvm) != length(cv$cvse)) stop(test_name, " (cvse length mismatch)")
+  if (length(cv$beta0_vec) != ncol(cv$beta_mat)) stop(test_name, " (beta0 vs beta_mat mismatch)")
+  if (!(cv$lambda_min %in% cv$lambda_seq)) stop(test_name, " (lambda_min not in path)")
+  if (!(cv$lambda_1se %in% cv$lambda_seq)) stop(test_name, " (lambda_1se not in path)")
+  
+  imin <- which(cv$lambda_seq == cv$lambda_min)[1]
+  i1se <- which(cv$lambda_seq == cv$lambda_1se)[1]
+  if (!(i1se <= imin)) stop(test_name, " (lambda_1se not earlier/larger than lambda_min)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
