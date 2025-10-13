@@ -16,25 +16,23 @@ standardizeXY <- function(X, Y){
   Ymean <- mean(Y)
   Ytilde <- as.numeric(Y - Ymean)
   
-  # Center and scale X
-  Xmeans <- colMeans(X)
-  Xc <- sweep(X, 2, Xmeans, FUN = "-")
+  # Center X and compute weights per column
+  Xmeans  <- colMeans(X)
+  Xtilde  <- matrix(0, n, p)
+  weights <- numeric(p)
   
-  # weights defined as sqrt(X_j^{\top}X_j/n) after centering of X but before scaling
-  n_inv <- 1 / n
-  weights <- sqrt(colSums(Xc * Xc) * n_inv)
-  
-  # check for columns with zero variance
-  zero_var <- which(weights == 0)
-  if (length(zero_var) > 0L) {
-    
-    # for constant columns, keep 0 after centering; set weight to 1 to avoid division by 0
-    weights[zero_var] <- 1
-    Xc[, zero_var] <- 0
+  for (j in seq_len(p)) {
+    xcj <- X[, j] - Xmeans[j]
+    ssj <- sum(xcj * xcj) # == 0 for constant column after centering
+    if (ssj == 0) {
+      weights[j] <- 1 # EXACTLY 1 for constant columns
+      Xtilde[, j] <- 0
+    } else {
+      wj <- sqrt(ssj / n)
+      weights[j] <- wj
+      Xtilde[, j] <- xcj / wj
+    }
   }
-  
-  # scale to ensure each column has n^{-1} X_j^T X_j = 1 after scaling
-  Xtilde <- sweep(Xc, 2, weights, FUN = "/")
   
   # Return:
   # Xtilde - centered and appropriately scaled X
