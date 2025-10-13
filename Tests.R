@@ -137,3 +137,26 @@ n_ok <- 0L
   if (!(i1se <= imin)) stop(test_name, " (lambda_1se not earlier/larger than lambda_min)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 8) Adversarial inputs
+
+# huge magnitude X and Y stay finite; all-zero Y results in zero beta, zero intercepts
+{
+  test_name <- "huge magnitudes, all-zero Y"
+  n <- 40; p <- 20
+  X_big <- matrix(rnorm(n*p), n, p) * 1e8
+  Y_big <- rnorm(n) * 1e8
+  std_big <- standardizeXY(X_big, Y_big)
+  if (!all(is.finite(std_big$Xtilde))) stop(test_name, " (Xtilde non-finite)")
+  if (!all(is.finite(std_big$Ytilde))) stop(test_name, " (Ytilde non-finite)")
+  fit_big <- fitLASSO(X_big, Y_big, n_lambda = 30, eps = 1e-3)
+  if (!all(is.finite(fit_big$beta_mat))) stop(test_name, " (beta_mat non-finite)")
+  if (!all(is.finite(fit_big$beta0_vec))) stop(test_name, " (beta0_vec non-finite)")
+  
+  Y_zero <- rep(0, n)
+  fit_zero <- fitLASSO(X_big, Y_zero, n_lambda = 20, eps = 1e-3)
+  if (max(abs(fit_zero$beta_mat)) > 1e-8) stop(test_name, " (zero-Y: betas not zero)")
+  if (max(abs(fit_zero$beta0_vec)) > 1e-8) stop(test_name, " (zero-Y: intercepts not zero)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
+
