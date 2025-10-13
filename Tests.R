@@ -78,3 +78,25 @@ n_ok <- 0L
   if (max(abs(fit_zero$beta)) > 1e-6) stop(test_name, " (not zero at lambda_max)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 5) fitLASSOstandardized_seq
+
+{
+  test_name <- "fitLASSOstandardized_seq shapes, order, zero start, sparsity trend"
+  n <- 100; p <- 20
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  
+  sf <- fitLASSOstandardized_seq(std$Xtilde, std$Ytilde, n_lambda = 50, eps = 1e-6)
+  if (length(sf$lambda_seq) != ncol(sf$beta_mat)) stop(test_name, " (lambda_seq vs beta_mat mismatch)")
+  if (!all(diff(sf$lambda_seq) <= 0)) stop(test_name, " (lambda_seq not decreasing)")
+  
+  # near-zero at first lambda
+  if (max(abs(sf$beta_mat[,1])) > 1e-4) stop(test_name, " (first beta not near zero)")
+  
+  # sparsity should generally increase as lambda decreases
+  nnz <- colSums(abs(sf$beta_mat) > 1e-8)
+  if (!(tail(nnz,1) >= nnz[1])) stop(test_name, " (sparsity did not increase overall)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
