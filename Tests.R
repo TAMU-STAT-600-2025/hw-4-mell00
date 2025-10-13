@@ -100,3 +100,18 @@ n_ok <- 0L
   if (!(tail(nnz,1) >= nnz[1])) stop(test_name, " (sparsity did not increase overall)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 6) fitLASSO
+
+{
+  test_name <- "fitLASSO shapes and intercept ~ mean(Y) at largest lambda"
+  n <- 80; p <- 15
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  fit <- fitLASSO(X, Y, n_lambda = 40, eps = 1e-4)
+  
+  if (length(fit$lambda_seq) != ncol(fit$beta_mat)) stop(test_name, " (lambda_seq vs beta_mat mismatch)")
+  if (length(fit$beta0_vec)  != length(fit$lambda_seq)) stop(test_name, " (beta0 length mismatch)")
+  if (abs(fit$beta0_vec[1] - mean(Y)) > 1e-6) stop(test_name, " (beta0[1] != mean(Y))")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
