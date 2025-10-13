@@ -29,3 +29,14 @@ n_ok <- 0L
   if (max(abs(zj[-const_j] - 1)) > 1e-10) stop(test_name, " ((1/n) X^T X diag not ~ 1)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 2) soft-thresholding
+
+{
+  test_name <- "soft() basic correctness"
+  if (!isTRUE(all.equal(soft(3, 1),  2, tolerance = 1e-12)))  stop(test_name, " (soft(3,1))")
+  if (!isTRUE(all.equal(soft(-3,1), -2, tolerance = 1e-12)))  stop(test_name, " (soft(-3,1))")
+  if (!isTRUE(all.equal(soft(0.5,1), 0, tolerance = 1e-12)))  stop(test_name, " (soft(0.5,1))")
+  if (!isTRUE(all.equal(soft(2, 0),  2, tolerance = 1e-12)))  stop(test_name, " (soft(2,0))")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
