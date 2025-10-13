@@ -259,3 +259,29 @@ n_ok <- 0L
   if (any(diff(l1) < -1e-10)) stop(test_name, " (beta L1 norm decreased along decreasing lambda)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 9) TOY EXAMPLE #1
+
+# 1D exact solution at lambda = 0 and zero-solution at large lambda
+{
+  test_name <- "toy example #1 lambda = 0 equals OLS; very large lambda gives beta = 0"
+  set.seed(7)
+  n <- 40
+  x <- scale(rnorm(n), center = TRUE, scale = FALSE)
+  w <- sqrt(sum(x^2)/n); if (w == 0) w <- 1
+  x <- as.numeric(x / w)
+  beta_true <- 2.5
+  y <- beta_true * x + rnorm(n, sd = 0.05)
+  
+  # lambda = 0 gives beta_hat = (1/n) x^T y
+  lam0 <- 0
+  fit0 <- fitLASSOstandardized(matrix(x, ncol = 1), y, lambda = lam0, eps = 1e-10)
+  corr <- sum(x * y) / n
+  if (abs(fit0$beta[1] - corr) > 5e-4) stop(test_name, " (lambda = 0 mismatch)")
+  
+  # very large lambda gives beta = 0
+  lam_max <- abs(sum(x * y) / n)
+  fit_big <- fitLASSOstandardized(matrix(x, ncol = 1), y, lambda = 100 * lam_max, eps = 1e-8)
+  if (max(abs(fit_big$beta)) > 1e-10) stop(test_name, " (beta not zero at huge lambda)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
