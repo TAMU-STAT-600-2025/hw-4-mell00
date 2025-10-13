@@ -180,3 +180,18 @@ n_ok <- 0L
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
 
+# junk lambda_seq (including NA/Inf/neg/dupes/unsorted) cleaned
+{
+  test_name <- "clean up junk lambda_seq"
+  n <- 35; p <- 12
+  X <- matrix(rnorm(n*p), n, p)
+  Y <- rnorm(n)
+  std <- standardizeXY(X, Y)
+  lam_junk <- c(Inf, NA, -1, 0.5, 0.5, 10, 1e-3)
+  
+  sf <- fitLASSOstandardized_seq(std$Xtilde, std$Ytilde, lambda_seq = lam_junk, eps = 1e-4)
+  if (length(sf$lambda_seq) != ncol(sf$beta_mat)) stop(test_name, " (shapes mismatch)")
+  if (!all(sf$lambda_seq >= 0)) stop(test_name, " (negative lambda remained)")
+  if (!all(diff(sf$lambda_seq) <= 0)) stop(test_name, " (lambda not decreasing)")
+  cat(test_name, "PASSED\n"); n_ok <-  n_ok + 1L
+}
