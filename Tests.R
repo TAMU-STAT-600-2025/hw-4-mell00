@@ -233,3 +233,16 @@ n_ok <- 0L
   if (length(cv$lambda_seq) != length(cv$cvm)) stop(test_name, " (cvm mismatch)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+# check that tight epsilon does not yield worse objective
+{
+  test_name <- "tighter eps gives equal or better objective"
+  set.seed(1)
+  n <- 80; p <- 10
+  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  std <- standardizeXY(X, Y); lam <- 0.2
+  loose <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam, eps = 1e-2)
+  tight <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam, eps = 1e-8)
+  if (!(tight$fmin <= loose$fmin + 1e-8)) stop(test_name, " (tight epsilon worse objective)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
