@@ -25,7 +25,7 @@ n_ok <- 0L
   zj <- colSums(std$Xtilde^2) / n
   const_j <- ncol(std$Xtilde)
   if (!isTRUE(all.equal(std$weights[const_j], 1))) stop(test_name, " (weight for constant col != 1)")
-  if (sum(std$Xtilde[, const_j]^2) != 0) stop(test_name, " (constant col not zeroed)")
+  if (sum(std$Xtilde[, const_j] ^ 2) != 0) stop(test_name, " (constant col not zeroed)")
   if (max(abs(zj[-const_j] - 1)) > 1e-10) stop(test_name, " ((1/n) X^T X diag not ~ 1)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
@@ -34,10 +34,10 @@ n_ok <- 0L
 
 {
   test_name <- "soft() basic correctness"
-  if (!isTRUE(all.equal(soft(3, 1),  2, tolerance = 1e-12)))  stop(test_name, " (soft(3,1))")
-  if (!isTRUE(all.equal(soft(-3,1), -2, tolerance = 1e-12)))  stop(test_name, " (soft(-3,1))")
-  if (!isTRUE(all.equal(soft(0.5,1), 0, tolerance = 1e-12)))  stop(test_name, " (soft(0.5,1))")
-  if (!isTRUE(all.equal(soft(2, 0),  2, tolerance = 1e-12)))  stop(test_name, " (soft(2,0))")
+  if (!isTRUE(all.equal(soft(3, 1),  2, tolerance = 1e-12)))  stop(test_name, " (soft(3, 1))")
+  if (!isTRUE(all.equal(soft(-3, 1), -2, tolerance = 1e-12)))  stop(test_name, " (soft(-3, 1))")
+  if (!isTRUE(all.equal(soft(0.5, 1), 0, tolerance = 1e-12)))  stop(test_name, " (soft(0.5, 1))")
+  if (!isTRUE(all.equal(soft(2, 0),  2, tolerance = 1e-12)))  stop(test_name, " (soft(2, 0))")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
 
@@ -46,7 +46,7 @@ n_ok <- 0L
 {
   test_name <- "lasso() objective increases with lambda for a fixed beta"
   n <- 30; p <- 5
-  X <- matrix(rnorm(n*p), n, p)
+  X <- matrix(rnorm(n * p), n, p)
   Y <- rnorm(n)
   std <- standardizeXY(X, Y)
   beta0 <- rep(0, p)
@@ -84,7 +84,7 @@ n_ok <- 0L
 {
   test_name <- "fitLASSOstandardized_seq shapes, order, zero start, sparsity trend"
   n <- 100; p <- 20
-  X <- matrix(rnorm(n*p), n, p)
+  X <- matrix(rnorm(n * p), n, p)
   Y <- rnorm(n)
   std <- standardizeXY(X, Y)
   
@@ -106,7 +106,7 @@ n_ok <- 0L
 {
   test_name <- "fitLASSO shapes and intercept ~ mean(Y) at largest lambda"
   n <- 80; p <- 15
-  X <- matrix(rnorm(n*p), n, p)
+  X <- matrix(rnorm(n * p), n, p)
   Y <- rnorm(n)
   fit <- fitLASSO(X, Y, n_lambda = 40, eps = 1e-4)
   
@@ -146,7 +146,7 @@ n_ok <- 0L
 {
   test_name <- "huge magnitudes, all-zero Y"
   n <- 40; p <- 20
-  X_big <- matrix(rnorm(n*p), n, p) * 1e8
+  X_big <- matrix(rnorm(n * p), n, p) * 1e8
   Y_big <- rnorm(n) * 1e8
   std_big <- standardizeXY(X_big, Y_big)
   if (!all(is.finite(std_big$Xtilde))) stop(test_name, " (Xtilde non-finite)")
@@ -200,10 +200,10 @@ n_ok <- 0L
 {
   test_name <- "very large lambda yields all-zero solution"
   n <- 50; p <- 10
-  X <- matrix(rnorm(n*p), n, p)
+  X <- matrix(rnorm(n * p), n, p)
   Y <- rnorm(n)
   std <- standardizeXY(X, Y)
-  lam_max <- max(abs(drop(crossprod(std$Xtilde, std$Ytilde)))/n)
+  lam_max <- max(abs(drop(crossprod(std$Xtilde, std$Ytilde))) / n)
   fit_vl <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam_max * 100, eps = 1e-6)
   if (max(abs(fit_vl$beta)) > 1e-10) stop(test_name, " (beta not zero)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
@@ -213,8 +213,8 @@ n_ok <- 0L
 {
   test_name <- "p >> n with collinearity remains stable and finite"
   n <- 30; p <- 300
-  X <- matrix(rnorm(n*p), n, p)
-  X[,2] <- X[,1] + rnorm(n, sd = 1e-6)  # strong collinearity
+  X <- matrix(rnorm(n * p), n, p)
+  X[, 2] <- X[, 1] + rnorm(n, sd = 1e-6)  # strong collinearity
   Y <- rnorm(n)
   fit <- fitLASSO(X, Y, n_lambda = 25, eps = 1e-3)
   if (length(fit$lambda_seq) != ncol(fit$beta_mat)) stop(test_name, " (shapes mismatch)")
@@ -226,7 +226,7 @@ n_ok <- 0L
 {
   test_name <- "cvLASSO with custom folds"
   n <- 45; p <- 25
-  X <- matrix(rnorm(n*p), n, p)
+  X <- matrix(rnorm(n * p), n, p)
   Y <- rnorm(n)
   fold_ids <- rep(1:5, length.out = n); fold_ids[1:3] <- 1
   cv <- cvLASSO(X, Y, n_lambda = 15, fold_ids = fold_ids, eps = 1e-3)
@@ -239,7 +239,7 @@ n_ok <- 0L
   test_name <- "tighter eps gives equal or better objective"
   set.seed(1)
   n <- 80; p <- 10
-  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  X <- matrix(rnorm(n * p), n, p); Y <- rnorm(n)
   std <- standardizeXY(X, Y); lam <- 0.2
   loose <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam, eps = 1e-2)
   tight <- fitLASSOstandardized(std$Xtilde, std$Ytilde, lambda = lam, eps = 1e-8)
@@ -252,7 +252,7 @@ n_ok <- 0L
   test_name <- "L1 norm increases as lambda decreases"
   set.seed(9)
   n <- 100; p <- 30
-  X <- matrix(rnorm(n*p), n, p); Y <- rnorm(n)
+  X <- matrix(rnorm(n * p), n, p); Y <- rnorm(n)
   std <- standardizeXY(X, Y)
   sf <- fitLASSOstandardized_seq(std$Xtilde, std$Ytilde, n_lambda = 40, eps = 1e-5)
   l1 <- colSums(abs(sf$beta_mat))
@@ -268,7 +268,7 @@ n_ok <- 0L
   set.seed(7)
   n <- 40
   x <- scale(rnorm(n), center = TRUE, scale = FALSE)
-  w <- sqrt(sum(x^2)/n); if (w == 0) w <- 1
+  w <- sqrt(sum(x ^ 2) / n); if (w == 0) w <- 1
   x <- as.numeric(x / w)
   beta_true <- 2.5
   y <- beta_true * x + rnorm(n, sd = 0.05)
@@ -292,7 +292,7 @@ n_ok <- 0L
   test_name <- "toy example #2 lambda = 0 OLS, lambda > 0 soft-threshold"
   set.seed(5)
   n <- 60; p <- 5
-  A <- matrix(rnorm(n*p), n, p); Q <- qr.Q(qr(A))
+  A <- matrix(rnorm(n * p), n, p); Q <- qr.Q(qr(A))
   Xo <- sqrt(n) * Q
   beta_star <- c(1.5, -2, 0, 0.7, 0)
   y <- as.numeric(Xo %*% beta_star + rnorm(n, sd = 0.02))
@@ -310,3 +310,5 @@ n_ok <- 0L
   if (max(abs(fit1$beta - beta_soft)) > 5e-3) stop(test_name, " (soft-threshold mismatch)")
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+cat(sprintf("\n=== %d tests PASSED ===\n", n_ok))
