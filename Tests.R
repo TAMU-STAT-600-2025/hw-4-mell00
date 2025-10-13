@@ -55,3 +55,26 @@ n_ok <- 0L
   if (!(f2 > f1 - 1e-15)) stop(test_name)
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
+## 4) fitLASSOstandardized vs closed-form (orthonormal X)
+
+{
+  test_name <- "fitLASSOstandardized matches closed-form on orthonormal design"
+  n <- 120; p <- 10
+  A <- matrix(rnorm(n*p), n, p)
+  Q <- qr.Q(qr(A))
+  Xo <- sqrt(n) * Q # (1/n) X^T X = I
+  beta_true <- c(rep(2, 3), rep(0, p - 3))
+  Yo <- as.numeric(Xo %*% beta_true + rnorm(n, sd = 0.05))
+  lambda <- 0.5
+  corr <- drop(crossprod(Xo, Yo)) / n
+  beta_cf <- sign(corr) * pmax(abs(corr) - lambda, 0)
+  
+  fit_o <- fitLASSOstandardized(Xo, Yo, lambda = lambda, eps = 1e-8)
+  if (max(abs(fit_o$beta - beta_cf)) > 5e-3) stop(test_name, " (beta mismatch vs closed-form)")
+  
+  lambda_max <- max(abs(drop(crossprod(Xo, Yo)) / n))
+  fit_zero <- fitLASSOstandardized(Xo, Yo, lambda = lambda_max, eps = 1e-8)
+  if (max(abs(fit_zero$beta)) > 1e-6) stop(test_name, " (not zero at lambda_max)")
+  cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
+}
