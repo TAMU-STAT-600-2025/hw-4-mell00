@@ -6,29 +6,44 @@ cat("\n=== Begin Tests (LASSO) ===\n")
 n_ok <- 0L
 
 ## 1) standardizeXY
-
 {
   test_name <- "standardizeXY shapes, centering, scaling, constant column handling"
+  set.seed(1)
   n <- 50; p <- 8
   X_raw <- matrix(rnorm(n * p), n, p)
-  X_raw <- cbind(X_raw, const = 7)  # add constant col
+  X_raw <- cbind(X_raw, const = 7)
   Y_raw <- rnorm(n) + 0.5
+  tol <- 1e-8
   
   std <- standardizeXY(X_raw, Y_raw)
-  if (!all.equal(dim(std$Xtilde), c(n, p + 1))) stop(test_name, " (Xtilde dims)")
-  if (!isTRUE(all.equal(mean(Y_raw), std$Ymean, tolerance = 1e-12))) stop(test_name, " (Ymean mismatch)")
-  if (!isTRUE(all.equal(mean(std$Ytilde), 0, tolerance = 1e-12))) stop(test_name, " (Ytilde not centered)")
   
-  xm <- colMeans(std$Xtilde)
-  if (max(abs(xm)) > 1e-10) stop(test_name, " (Xtilde columns not centered)")
+  # shapes
+  if (!isTRUE(all.equal(dim(std$Xtilde), c(n, p + 1)))) stop(test_name, " (Xtilde dims)")
+  if (length(std$Xmeans)  != p + 1) stop(test_name, " (Xmeans length)")
+  if (length(std$weights) != p + 1) stop(test_name, " (weights length)")
   
+  # Y centering
+  if (!isTRUE(all.equal(std$Ymean,  mean(Y_raw), tolerance = 1e-12))) stop(test_name, " (Ymean mismatch)")
+  if (!isTRUE(all.equal(mean(std$Ytilde), 0,       tolerance = 1e-12))) stop(test_name, " (Ytilde not centered)")
+  
+  # X centering
+  if (max(abs(colMeans(std$Xtilde))) > tol) stop(test_name, " (Xtilde columns not centered)")
+  
+  # weights definition (after centering; constants -> 1)
+  Xc <- sweep(X_raw, 2, std$Xmeans, "-")
+  w_def <- sqrt(colSums(Xc^2) / n); w_def[w_def == 0] <- 1
+  if (!isTRUE(all.equal(std$weights, w_def, tolerance = 1e-12))) stop(test_name, " (weights definition mismatch)")
+  
+  # scaling check
   zj <- colSums(std$Xtilde^2) / n
   const_j <- ncol(std$Xtilde)
-  if (!isTRUE(all.equal(std$weights[const_j], 1))) stop(test_name, " (weight for constant col != 1)")
-  if (sum(std$Xtilde[, const_j] ^ 2) != 0) stop(test_name, " (constant col not zeroed)")
-  if (max(abs(zj[-const_j] - 1)) > 1e-10) stop(test_name, " ((1/n) X^T X diag not ~ 1)")
+  if (!isTRUE(all.equal(unname(std$weights[const_j]), 1, tolerance = 0))) stop(test_name, " (weight for constant col != 1)")
+  if (!isTRUE(all.equal(sum(std$Xtilde[, const_j]^2), 0, tolerance = 1e-12))) stop(test_name, " (constant col not zeroed)")
+  if (max(abs(zj[-const_j] - 1)) > tol) stop(test_name, " ((1/n) X^T X diag not ~ 1)")
+  
   cat(test_name, "PASSED\n"); n_ok <- n_ok + 1L
 }
+
 
 ## 2) soft-thresholding
 
