@@ -1,47 +1,49 @@
 # Standardize X and Y: center both X and Y; scale centered X
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
+
 standardizeXY <- function(X, Y){
-  
   # Basic checks
   if (is.null(dim(X))) stop("X must be a 2D matrix")
-  if (!is.numeric(X)) stop("X must be numeric")
-  if (!is.numeric(Y)) stop("Y must be numeric")
+  if (!is.numeric(X) || !is.numeric(Y)) stop("X and Y must be numeric")
+  X <- as.matrix(X)
   n <- nrow(X); p <- ncol(X)
   if (length(Y) != n) stop("length of Y must match number of rows in X")
   if (n < 1 || p < 1) stop("X must have positive dimensions")
   if (anyNA(X) || anyNA(Y)) stop("missing inputs not supported")
   
   # Center Y
-  Ymean <- mean(Y)
+  Ymean  <- mean(Y)
   Ytilde <- as.numeric(Y - Ymean)
   
   # Center X and compute weights per column
-  Xmeans  <- colMeans(X)
-  Xtilde  <- matrix(0, n, p)
-  weights <- numeric(p)
+  Xmeans <- colMeans(X)
+  Xc <- sweep(X, 2, Xmeans, "-")
   
-  for (j in seq_len(p)) {
-    xcj <- X[, j] - Xmeans[j]
-    ssj <- sum(xcj * xcj) # == 0 for constant column after centering
-    if (ssj == 0) {
-      weights[j] <- 1 # EXACTLY 1 for constant columns
-      Xtilde[, j] <- 0
-    } else {
-      wj <- sqrt(ssj / n)
-      weights[j] <- wj
-      Xtilde[, j] <- xcj / wj
-    }
+  # weights = sqrt((1/n) * X_j^T X_j) on centered X
+  ss <- colSums(Xc * Xc) # 0 exactly for constant cols
+  weights <- sqrt(ss / n)
+  const <- (ss == 0) | !is.finite(ss)
+  if (any(const)) {
+    weights[const] <- 1 # exact 1 for constant columns
+    Xc[, const] <- 0
   }
   
-  # Return:
-  # Xtilde - centered and appropriately scaled X
-  # Ytilde - centered Y
-  # Ymean - the mean of original Y
-  # Xmeans - means of columns of X (vector)
-  # weights - defined as sqrt(X_j^{\top}X_j/n) after centering of X but before scaling
-  return(list(Xtilde = Xtilde, Ytilde = Ytilde, Ymean = Ymean, Xmeans = Xmeans, weights = weights))
+  # scale non-constant columns only
+  Xtilde <- Xc
+  nz <- !const
+  if (any(nz)) Xtilde[, nz] <- sweep(Xc[, nz, drop = FALSE], 2, weights[nz], "/")
+  
+  # preserve names so tests comparing definitions pass
+  cn <- colnames(X)
+  names(Xmeans)  <- cn
+  names(weights) <- cn
+  colnames(Xtilde) <- cn
+  
+  # Return
+  list(Xtilde = Xtilde, Ytilde = Ytilde, Ymean = Ymean, Xmeans = Xmeans, weights = weights)
 }
+
 
 # Soft-thresholding of a scalar a at level lambda 
 # [OK to have vector version as long as works correctly on scalar; will only test on scalars]
