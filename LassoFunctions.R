@@ -229,7 +229,6 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
 #             is only used when the tuning sequence is not supplied by the user
 # eps - precision level for convergence assessment, default 0.001
 fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
-  
   # Check that n is the same between Xtilde and Ytilde
   if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
   if (!is.numeric(Xtilde) || !is.numeric(Ytilde))
@@ -242,9 +241,9 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   
   # helper function to sanitize/sort lambda vectors
   .finalize_lambda <- function(v) {
-    v <- v[is.finite(v) & v >= 0]        # keep finite, non-negative
+    v <- v[is.finite(v) & v >= 0] # keep finite, non-negative
     v <- sort(as.numeric(v), decreasing = TRUE) # enforce decreasing order
-    v <- unique(v)                        # drop duplicates
+    v <- unique(v) # drop duplicates
     v
   }
   
@@ -253,7 +252,6 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   # and make sure the values are sorted from largest to smallest.
   # If none of the supplied values satisfy the requirement,
   # print the warning message and proceed as if the values were not supplied.
-  
   used_supplied <- FALSE
   if (!is.null(lambda_seq)) {
     if (!is.numeric(lambda_seq)) stop("supplied lambda_seq must be numeric")
@@ -265,50 +263,41 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
     }
   }
   
-  # If lambda_seq is not supplied, calculate lambda_max 
+  # If lambda_seq is not supplied, calculate lambda_max
   # (the minimal value of lambda that gives zero solution),
   # and create a sequence of length n_lambda as
   # lambda_seq = exp(seq(log(lambda_max), log(0.01), length = n_lambda))
-  
   if (!used_supplied) {
-    
     # lambda_max = max_j |(1/n) Xtilde_j^T Ytilde|
-    # compute cross-products
     lam_candidates <- abs(drop(crossprod(Xtilde, Ytilde))) / n
     lambda_max <- suppressWarnings(max(lam_candidates))
-    
-    
     if (!is.finite(lambda_max) || lambda_max < .Machine$double.eps) {
       # fallback -> all zeros path
       lambda_seq <- rep(0, n_lambda)
     } else {
-      # geometric path relative to lambda_max (1% of lambda_max)
-      lambda_min <- lambda_max * 0.01
+      # geometric path down to absolute 0.01 on standardized scale
+      lambda_min <- 0.01
       lambda_seq <- exp(seq(log(lambda_max), log(lambda_min), length.out = n_lambda))
     }
-    
-    
     lambda_seq <- .finalize_lambda(lambda_seq) # clean generated seq
     if (length(lambda_seq) == 0L) lambda_seq <- rep(0, n_lambda) # final fallback
   }
   
-  
   # Ensure descending sort
-  lambda_seq <- sort(lambda_seq, decreasing = TRUE) 
+  lambda_seq <- sort(lambda_seq, decreasing = TRUE)
   
-  # Apply fitLASSOstandardized going from largest to smallest lambda 
-  # (make sure supplied eps is carried over). 
+  # Apply fitLASSOstandardized going from largest to smallest lambda
+  # (make sure supplied eps is carried over).
   # Use warm starts strategy discussed in class for setting the starting values.
-  
   m <- length(lambda_seq)
   beta_mat <- matrix(0, nrow = p, ncol = m)
   fmin_vec <- numeric(m)
   beta_start <- rep(0, p)
   
   # Precompute once for the whole path
-  z     <- colSums(Xtilde * Xtilde) / n
+  z <- colSums(Xtilde * Xtilde) / n
   Xcols <- lapply(seq_len(p), function(j) Xtilde[, j])
-  r_prev <- as.numeric(Ytilde)  # residual at beta = 0
+  r_prev <- as.numeric(Ytilde) # residual at beta = 0
   g_prev <- as.numeric(crossprod(Xtilde, r_prev)) / n
   
   for (t in seq_len(m)) {
@@ -326,18 +315,14 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
       fit_t <- .cd_solve_precomp(Xtilde, Xcols, Ytilde, z, lam, beta_start, eps,
                                  active = active, kkt_tol = 1e-7)
     }
-    
     beta_mat[, t] <- fit_t$beta
-    fmin_vec[t]   <- fit_t$fmin
-    beta_start    <- fit_t$beta
-    r_prev        <- fit_t$r
-    g_prev        <- as.numeric(crossprod(Xtilde, r_prev)) / n
+    fmin_vec[t] <- fit_t$fmin
+    beta_start <- fit_t$beta
+    r_prev <- fit_t$r
+    g_prev <- as.numeric(crossprod(Xtilde, r_prev)) / n
   }
   
   # Return output
-  # lambda_seq - the actual sequence of tuning parameters used
-  # beta_mat - p x length(lambda_seq) matrix of corresponding solutions at each lambda value
-  # fmin_vec - length(lambda_seq) vector of corresponding objective function values at solution
   return(list(lambda_seq = lambda_seq, beta_mat = beta_mat, fmin_vec = fmin_vec))
 }
 
