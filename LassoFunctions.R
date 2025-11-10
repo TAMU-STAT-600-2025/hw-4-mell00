@@ -135,7 +135,7 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
       rho <- sum(xj * r) / n
       
       # soft-threshold update
-      bj_new <- soft(rho, lambda) / z[j]
+      bj_new <- soft(rho, lambda)
       beta[j] <- bj_new
       
       # update l1 incrementally
@@ -189,7 +189,7 @@ fitLASSOstandardized <- function(Xtilde, Ytilde, lambda, beta_start = NULL, eps 
       rho <- as.numeric(crossprod(xj, r)) / n
       
       # soft-threshold update
-      bj_new <- soft(rho, lambda) / z[j]
+      bj_new <- soft(rho, lambda)
       beta[j] <- bj_new
       
       # update l1 incrementally
@@ -243,7 +243,7 @@ fitLASSOstandardized_seq <- function(Xtilde, Ytilde, lambda_seq = NULL, n_lambda
   .finalize_lambda <- function(v) {
     v <- v[is.finite(v) & v >= 0] # keep finite, non-negative
     v <- sort(as.numeric(v), decreasing = TRUE) # enforce decreasing order
-    v <- unique(v) # drop duplicates
+    # v <- unique(v) # drop duplicates
     v
   }
   
@@ -379,7 +379,6 @@ fitLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, eps = 0.001){
   return(list(lambda_seq = lambda_seq_out, beta_mat = beta_mat, beta0_vec = beta0_vec))
 }
 
-
 # Fit LASSO and perform cross-validation to select the best fit
 # X - n x p matrix of covariates
 # Y - n x 1 response vector
@@ -505,16 +504,7 @@ cvLASSO <- function(X ,Y, lambda_seq = NULL, n_lambda = 60, k = 5, fold_ids = NU
   lambda_1se <- lambda_seq_used[min(idx_1se)]
   
   # Return output
-  # Output from fitLASSO on the whole data
-  # lambda_seq - the actual sequence of tuning parameters used
-  # beta_mat - p x length(lambda_seq) matrix of corresponding solutions at each lambda value (original data without center or scale)
-  # beta0_vec - length(lambda_seq) vector of intercepts (original data without center or scale)
-  # fold_ids - used splitting into folds from 1 to k (either as supplied or as generated in the beginning)
-  # lambda_min - selected lambda based on minimal rule
-  # lambda_1se - selected lambda based on 1SE rule
-  # cvm - values of CV(lambda) for each lambda
-  # cvse - values of SE_CV(lambda) for each lambda
   return(list(lambda_seq = lambda_seq_used, beta_mat = full_fit$beta_mat,
-        beta0_vec  = full_fit$beta0_vec, fold_ids   = fold_ids, lambda_min = lambda_min, 
-        lambda_1se = lambda_1se, cvm = cvm, cvse = cvse))
+              beta0_vec  = full_fit$beta0_vec, fold_ids   = fold_ids, lambda_min = lambda_min, 
+              lambda_1se = lambda_1se, cvm = cvm, cvse = cvse))
 }
