@@ -63,14 +63,15 @@ lasso <- function(Xtilde, Ytilde, beta, lambda){
   if (is.null(dim(Xtilde))) stop("Xtilde must be a 2D matrix")
   if (!is.numeric(Xtilde) || !is.numeric(Ytilde) || !is.numeric(beta))
     stop("all inputs must be numeric")
-  n <- nrow(Xtilde); p <- ncol(Xtilde)
+  p <- ncol(Xtilde)
+  n <- length(Ytilde)
   if (length(Ytilde) != n) stop("length of Ytilde must = number of rows in Xtilde")
   if (length(beta) != p) stop("length of beta must = number of columns in Xtilde")
   if (!is.numeric(lambda) || length(lambda) != 1L || lambda < 0)
     stop("lambda must be a non-negative numeric scalar")
-  
-  resid <- as.numeric(Ytilde - Xtilde %*% beta)
-  (as.numeric(crossprod(resid)) / (2 * n)) + lambda * sum(abs(beta))
+  return(
+    sum(((Ytilde - Xtilde %*% beta) * (2 * n)^(-1/2) )^2) + lambda * sum(abs(beta))
+  )
 }
 
 # Fit LASSO on standardized data for a given lambda
